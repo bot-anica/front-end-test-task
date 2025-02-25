@@ -1,74 +1,84 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import { ILoginCredentials, IUserInfo } from "../../entities";
 
-const initialState = {
-	isAuthenticated: false,
-	user: null,
-	loading: false,
-	error: null,
-	data: {},
-	status: "idle",
-	userInfo: {
-		email: "",
-		name: "",
-		id: null,
-		role: "",
-	},
+type AuthStatus = "idle" | "loading" | "succeeded" | "failed";
+
+export interface IAuthState {
+  isAuthenticated: boolean;
+  user: IUserInfo | null;
+  error: string | null;
+  status: AuthStatus;
+}
+
+const initialState: IAuthState = {
+  isAuthenticated: false,
+  user: null,
+  error: null,
+  status: "idle",
 };
 
+export const loginUser = createAsyncThunk(
+  "auth/login",
+  async (credentials: ILoginCredentials) => {
+    await new Promise((r) => setTimeout(r, 1000));
+
+    if (
+      credentials.email !== "test@test.test" ||
+      credentials.password !== "password"
+    ) {
+      throw new Error("Invalid email or password");
+    }
+
+    return {
+      email: credentials.email,
+      name: "Test User",
+      id: 1,
+      role: "user",
+    } as IUserInfo;
+  }
+);
+
 const authSlice = createSlice({
-	name: "authentication",
-	initialState: initialState,
-	reducers: {
-		loginStart(state) {
-			state.loading = true;
-			state.error = null;
-			state.status = "loading";
-			state.data = {};
-		},
-		loginSuccess(state, { payload }) {
-			state.isAuthenticated = true;
-			state.user = payload;
-			state.loading = false;
-			state.error = null;
-			state.status = "succeeded";
-			state.data = payload;
-			state.userInfo = {
-				...state.userInfo,
-				...payload,
-			};
-		},
-		loginFailure(state, { payload }) {
-			state.loading = false;
-			state.error = payload;
-			state.status = "failed";
-			state.data = {};
-			state.user = null;
-		},
-		logout(state) {
-			return initialState;
-		},
-		updateUserInfo(state, { payload }) {
-			state.userInfo = {
-				...state.userInfo,
-				...payload,
-			};
-			state.user = {
-				...state.user,
-				...payload,
-			};
-			state.data = {
-				...state.data,
-				...payload,
-			};
-		},
-	},
+  name: "auth",
+  initialState,
+  reducers: {
+    logout(state) {
+      Object.assign(state, initialState);
+    },
+    updateUserInfo(state, { payload }: PayloadAction<Partial<IUserInfo>>) {
+      if (!state.user) return;
+
+      state.user = {
+        ...state.user,
+        ...payload,
+      };
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginUser.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+        state.isAuthenticated = false;
+      })
+      .addCase(loginUser.fulfilled, (state, { payload }) => {
+        state.isAuthenticated = true;
+        state.user = payload;
+        state.error = null;
+        state.status = "succeeded";
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.error =
+          action.error.message || "An error occurred during sign in";
+        state.status = "failed";
+        state.user = null;
+        state.isAuthenticated = false;
+      });
+  },
 });
 
-export const {
-	loginStart,
-	loginSuccess,
-	loginFailure,
-	logout,
-	updateUserInfo,
-} = authSlice.actions;
+export const { logout, updateUserInfo } = authSlice.actions;
+
+export const selectAuth = (state: { auth: IAuthState }) => state.auth;
+
 export default authSlice.reducer;

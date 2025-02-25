@@ -1,53 +1,15 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { ICat } from "../entities";
 
-interface CatModel {
-	weight: { imperial: string; metric: string };
-	id: string;
-	name: string;
-	cfa_url: string;
-	vetstreet_url: string;
-	vcahospitals_url: string;
-	temperament: string;
-	origin: string;
-	country_codes: string;
-	country_code: string;
-	description: string;
-	life_span: string;
-	indoor: number;
-	lap: number;
-	alt_names: string;
-	adaptability: number;
-	affection_level: number;
-	child_friendly: number;
-	dog_friendly: number;
-	energy_level: number;
-	grooming: number;
-	health_issues: number;
-	intelligence: number;
-	shedding_level: number;
-	social_needs: number;
-	stranger_friendly: number;
-	vocalisation: number;
-	experimental: number;
-	hairless: number;
-	natural: number;
-	rare: number;
-	rex: number;
-	suppressed_tail: number;
-	short_legs: number;
-	wikipedia_url: string;
-	hypoallergenic: number;
-	reference_image_id: string;
-	image?: {
-		id: string;
-		width: number;
-		height: number;
-		url: string;
-	};
-}
+const API_KEY =
+  "live_ZUe7htq4BjB2mFH6pnQirfvfoI1r7ovxtB42aQRTGTWHpWvZTHtJufzvQWqaPp1f";
 
 const baseQuery = fetchBaseQuery({
-	baseUrl: "/",
+  baseUrl: "https://api.thecatapi.com/v1",
+  prepareHeaders: (headers) => {
+    headers.set("x-api-key", API_KEY);
+    return headers;
+  },
 });
 
 const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
@@ -60,9 +22,23 @@ const baseQueryWithRetry = async (args: any, api: any, extraOptions: any) => {
 };
 
 export const catsApi = createApi({
-	reducerPath: "catsApi",
-	baseQuery: baseQueryWithRetry,
-	endpoints: (builder) => ({}),
+  reducerPath: "catsApi",
+  baseQuery: baseQueryWithRetry,
+  tagTypes: ["Breeds"],
+  endpoints: (builder) => ({
+    getBreeds: builder.query<ICat[], void>({
+      query: () => "breeds",
+      providesTags: ["Breeds"],
+    }),
+    getBreedById: builder.query<ICat, string>({
+      query: (breedId) => `breeds/${breedId}`,
+      providesTags: (_result, _error, breedId) => [
+        { type: "Breeds", id: breedId },
+      ],
+    }),
+  }),
 });
 
-export const {} = catsApi;
+export const { useGetBreedsQuery, useGetBreedByIdQuery } = catsApi
+
+export const { endpoints, reducerPath, reducer, middleware } = catsApi
