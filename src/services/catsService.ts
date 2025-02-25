@@ -1,13 +1,11 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { ICat } from "../entities";
 
-const API_KEY =
-  "live_ZUe7htq4BjB2mFH6pnQirfvfoI1r7ovxtB42aQRTGTWHpWvZTHtJufzvQWqaPp1f";
+import { ICat } from "../entities";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: "https://api.thecatapi.com/v1",
   prepareHeaders: (headers) => {
-    headers.set("x-api-key", API_KEY);
+    headers.set("x-api-key", import.meta.env.REACT_APP_API_KEY);
     return headers;
   },
 });
